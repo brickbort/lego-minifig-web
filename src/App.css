@@ -200,3 +200,19 @@ a:hover { text-decoration: underline; }
   .app-logo        { width: 240px; }
   .app-title-image { width: 280px; }
 }
+/* --- Stack results vertically & center them --- */
+.results-container {
+  display: flex;
+  flex-direction: column;   /* one per row */
+  align-items: center;      /* center the cards */
+  gap: 16px;
+  padding: 1rem 0;
+}
+
+/* Make each card a nice centered column width */
+.minifig-card {
+  width: 100%;
+  max-width: 360px;         /* tweak to taste: 320–420px */
+  margin: 0 auto;           /* center horizontally */
+  height: auto;             /* let the content decide height */
+}
