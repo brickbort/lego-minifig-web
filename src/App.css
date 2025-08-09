@@ -1,0 +1,202 @@
+/* ---------------------------------------
+   Font
+--------------------------------------- */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+
+/* ---------------------------------------
+   Global
+--------------------------------------- */
+html, body, #root { height: 100%; }
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Inter', sans-serif;
+  background: #fff;                     /* solid white page background */
+  color: #111827;
+}
+
+/* Status text */
+.error  { color: #ef4444; }
+.loading{ color: #6b7280; }
+
+/* ---------------------------------------
+   App Container (keeps sticky footer working)
+--------------------------------------- */
+.app {
+  width: 100%;
+  max-width: 960px;
+  min-height: 100%;
+  margin: 1rem auto 0;                  /* near the top */
+  padding: 0 1rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---------------------------------------
+   Header (logo centered above title image)
+--------------------------------------- */
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;       /* base; overridden by stack */
+  gap: 12px;
+  margin-bottom: 1rem;
+}
+
+.app-header--stack {
+  flex-direction: column;
+  justify-content: center;
+  text-align: center;
+  gap: 6px;
+}
+
+/* 400px-wide logo, centered */
+.app-logo {
+  width: 400px;
+  height: auto;
+  object-fit: contain;
+  margin: 0 auto;
+}
+
+/* Title image under the logo */
+.app-title-image {
+  width: 600px;
+  max-width: 90vw;
+  height: auto;
+  margin-top: -100px;
+  display: block;
+}
+
+/* ---------------------------------------
+   Controls
+--------------------------------------- */
+.controls {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+/* Hide native file inputs (we trigger them with buttons) */
+input[type="file"] { display: none; }
+
+/* Buttons */
+button {
+  background-color: #0070f3;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+button:hover  { background-color: #005bb5; }
+button:active { transform: translateY(1px); }
+
+/* ---------------------------------------
+   Results (side-by-side cards)
+--------------------------------------- */
+.results-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 16px;
+  padding: 1rem 0;
+  flex: 1 0 auto;                        /* grow to push footer down */
+}
+
+/* Card */
+.minifig-card {
+  width: 280px;
+  height: 420px;
+  background: #fff;                       /* pure white card */
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.minifig-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 18px rgba(0,0,0,0.12);
+}
+
+/* Card image */
+.minifig-card img {
+  width: 100%;
+  height: 180px;
+  object-fit: contain;
+  border-radius: 4px;
+  background: #f7fafc;
+  margin-bottom: 12px;
+}
+
+/* Card text */
+.minifig-card h3 {
+  font-size: 1.1rem;
+  margin: 8px 0;
+}
+.minifig-card p {
+  margin: 4px 0;
+  font-size: 0.95rem;
+}
+
+/* Price box pinned to bottom */
+.price-info {
+  margin-top: auto;
+  background: #fff;                       /* white price box */
+  border-radius: 8px;
+  padding: 0.75rem;
+  text-align: left;
+  font-size: 0.95rem;
+}
+.price-info p { margin: 4px 0; }
+
+/* Links */
+a { color: #6e3ff7; text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ---------------------------------------
+   Social footer
+--------------------------------------- */
+.site-footer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 0 24px;
+  margin-top: auto;                        /* stick to bottom on short pages */
+}
+
+.site-footer img {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  transition: transform .15s ease, filter .2s ease;
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,.15));
+}
+
+.site-footer a:hover img,
+.site-footer a:focus img {
+  transform: scale(1.08);
+}
+
+/* ---------------------------------------
+   Responsive tweaks
+--------------------------------------- */
+@media (max-width: 700px) {
+  .app-logo        { width: 300px; }
+  .app-title-image { width: 360px; }
+}
+
+@media (max-width: 420px) {
+  .app-logo        { width: 240px; }
+  .app-title-image { width: 280px; }
+}
