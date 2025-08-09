@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
 import './App.css';
 
-// Use env in prod (Render), fallback to local in dev
+// Backend base for BrickLink pricing (Render sets VITE_API_BASE, local uses localhost)
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
 
 function App() {
@@ -13,6 +13,39 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  async function recognizeV3(file) {
+    const fd = new FormData();
+    // Brickognize v3 expects the field name "image"
+    fd.append('image', file);
+    const res = await fetch('https://api.brickognize.com/v3/recognize', { method: 'POST', body: fd });
+
+    // Log full response for debugging
+    const clone = res.clone();
+    let bodyText = '';
+    try { bodyText = await clone.text(); } catch {}
+    console.log('[v3 recognize] status:', res.status, 'raw:', bodyText);
+
+    if (!res.ok) throw new Error(`v3 failed ${res.status}: ${bodyText}`);
+    const json = JSON.parse(bodyText || '{}');
+    return json.items || [];
+  }
+
+  async function recognizePredict(file) {
+    const fd = new FormData();
+    // Legacy endpoint expects "query_image"
+    fd.append('query_image', file, file.name);
+    const res = await fetch('https://api.brickognize.com/predict/', { method: 'POST', body: fd });
+
+    const clone = res.clone();
+    let bodyText = '';
+    try { bodyText = await clone.text(); } catch {}
+    console.log('[predict recognize] status:', res.status, 'raw:', bodyText);
+
+    if (!res.ok) throw new Error(`predict failed ${res.status}: ${bodyText}`);
+    const json = JSON.parse(bodyText || '{}');
+    return json.items || [];
+  }
+
   const handleImageUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -23,17 +56,21 @@ function App() {
     setResults([]);
 
     try {
-      // Brickognize v3: field name must be "image"
-      const formData = new FormData();
-      formData.append('image', file);
+      // Try v3 first, fall back to predict if needed
+      let items = [];
+      try {
+        items = await recognizeV3(file);
+      } catch (e1) {
+        console.warn('v3 recognize failed, trying predict…', e1);
+        try {
+          items = await recognizePredict(file);
+        } catch (e2) {
+          console.error('predict recognize also failed:', e2);
+          throw new Error('Brickognize did not return results (v3 and predict failed).');
+        }
+      }
 
-      const res = await fetch('https://api.brickognize.com/v3/recognize', {
-        method: 'POST',
-        body: formData,
-      });
-      const json = await res.json();
-
-      if (!json.items?.length) {
+      if (!items.length) {
         setError('❌ No minifig match found.');
         setLoading(false);
         return;
@@ -41,18 +78,19 @@ function App() {
 
       // Enrich each item with BrickLink pricing via your backend
       const enriched = await Promise.all(
-        json.items.map(async (item) => {
+        items.map(async (item) => {
+          const bricklinkSite =
+            item.external_sites?.find((s) => s.name?.toLowerCase() === 'bricklink') || {};
+
           let priceData = null;
           try {
             const priceRes = await fetch(`${API_BASE}/priceguide/${item.id}`);
             const priceJson = await priceRes.json();
+            console.log(`[price] ${item.id} status: ${priceRes.status}`, priceJson);
             priceData = priceJson?.data ?? null;
           } catch (err) {
             console.error(`Price fetch failed for ${item.id}:`, err);
           }
-
-          const bricklinkSite =
-            item.external_sites?.find((s) => s.name?.toLowerCase() === 'bricklink') || {};
 
           return {
             id: item.id,
@@ -66,8 +104,8 @@ function App() {
 
       setResults(enriched);
     } catch (err) {
-      console.error('Brickognize error:', err);
-      setError('❌ Failed to contact Brickognize.');
+      console.error('Recognition error:', err);
+      setError('❌ Failed to recognize the image. Please try another photo.');
     } finally {
       setLoading(false);
     }
@@ -75,7 +113,7 @@ function App() {
 
   return (
     <div className="app">
-      {/* Header (if you're using these images from /public) */}
+      {/* Header (logo + title) */}
       <header className="app-header app-header--stack">
         <img src="/circle-logo-2.png" alt="Logo" className="app-logo" />
         <img src="/title.png" alt="App Title" className="app-title-image" />
@@ -111,7 +149,7 @@ function App() {
           style={{ display: 'block', margin: '16px auto', maxWidth: 300 }}
         />
       )}
-      {loading && <p className="loading">🔄 Searching…</p>}
+      {loading && <p className="loading">🔄 Working…</p>}
       {error && <p className="error">{error}</p>}
 
       {/* Results */}
@@ -146,7 +184,7 @@ function App() {
         ))}
       </div>
 
-      {/* Social footer (optional) */}
+      {/* Footer */}
       <footer className="site-footer">
         <a
           href="https://www.instagram.com/brick_bort?igsh=MTFsY3FocnFtdTVweQ%3D%3D&utm_source=qr"
