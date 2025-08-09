@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
 import './App.css';
 
-// Backend base for BrickLink pricing (Render sets VITE_API_BASE, local uses localhost)
+// Backend base for BOTH recognition & pricing
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
 
 function App() {
@@ -12,38 +12,27 @@ function App() {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [condition, setCondition] = useState('N'); // N=new, U=used
 
-  async function recognizeV3(file) {
+  async function recognize(file) {
     const fd = new FormData();
-    // Brickognize v3 expects the field name "image"
-    fd.append('image', file);
-    const res = await fetch('https://api.brickognize.com/v3/recognize', { method: 'POST', body: fd });
-
-    // Log full response for debugging
-    const clone = res.clone();
-    let bodyText = '';
-    try { bodyText = await clone.text(); } catch {}
-    console.log('[v3 recognize] status:', res.status, 'raw:', bodyText);
-
-    if (!res.ok) throw new Error(`v3 failed ${res.status}: ${bodyText}`);
-    const json = JSON.parse(bodyText || '{}');
+    fd.append('image', file, file.name);
+    const res = await fetch(`${API_BASE}/recognize`, { method: 'POST', body: fd });
+    const json = await res.json();
+    if (!res.ok) throw new Error(JSON.stringify(json));
     return json.items || [];
   }
 
-  async function recognizePredict(file) {
-    const fd = new FormData();
-    // Legacy endpoint expects "query_image"
-    fd.append('query_image', file, file.name);
-    const res = await fetch('https://api.brickognize.com/predict/', { method: 'POST', body: fd });
-
-    const clone = res.clone();
-    let bodyText = '';
-    try { bodyText = await clone.text(); } catch {}
-    console.log('[predict recognize] status:', res.status, 'raw:', bodyText);
-
-    if (!res.ok) throw new Error(`predict failed ${res.status}: ${bodyText}`);
-    const json = JSON.parse(bodyText || '{}');
-    return json.items || [];
+  async function fetchPrice(id) {
+    try {
+      const res = await fetch(`${API_BASE}/priceguide/${id}?cond=${condition}`);
+      const json = await res.json();
+      if (!res.ok) throw new Error(JSON.stringify(json));
+      return json.data || null;
+    } catch (e) {
+      console.error('price fetch error:', e);
+      return null;
+    }
   }
 
   const handleImageUpload = async (e) => {
@@ -56,19 +45,7 @@ function App() {
     setResults([]);
 
     try {
-      // Try v3 first, fall back to predict if needed
-      let items = [];
-      try {
-        items = await recognizeV3(file);
-      } catch (e1) {
-        console.warn('v3 recognize failed, trying predict…', e1);
-        try {
-          items = await recognizePredict(file);
-        } catch (e2) {
-          console.error('predict recognize also failed:', e2);
-          throw new Error('Brickognize did not return results (v3 and predict failed).');
-        }
-      }
+      const items = await recognize(file);
 
       if (!items.length) {
         setError('❌ No minifig match found.');
@@ -76,22 +53,11 @@ function App() {
         return;
       }
 
-      // Enrich each item with BrickLink pricing via your backend
       const enriched = await Promise.all(
         items.map(async (item) => {
           const bricklinkSite =
             item.external_sites?.find((s) => s.name?.toLowerCase() === 'bricklink') || {};
-
-          let priceData = null;
-          try {
-            const priceRes = await fetch(`${API_BASE}/priceguide/${item.id}`);
-            const priceJson = await priceRes.json();
-            console.log(`[price] ${item.id} status: ${priceRes.status}`, priceJson);
-            priceData = priceJson?.data ?? null;
-          } catch (err) {
-            console.error(`Price fetch failed for ${item.id}:`, err);
-          }
-
+          const priceData = await fetchPrice(item.id);
           return {
             id: item.id,
             name: item.name,
@@ -104,16 +70,33 @@ function App() {
 
       setResults(enriched);
     } catch (err) {
-      console.error('Recognition error:', err);
+      console.error('recognize error:', err);
       setError('❌ Failed to recognize the image. Please try another photo.');
     } finally {
       setLoading(false);
     }
   };
 
+  // If you want prices to refresh when switching New/Used:
+  const handleConditionChange = async (e) => {
+    const cond = e.target.value;
+    setCondition(cond);
+    if (!results.length) return;
+
+    setLoading(true);
+    const updated = await Promise.all(
+      results.map(async (r) => ({
+        ...r,
+        priceData: await fetchPrice(r.id),
+      }))
+    );
+    setResults(updated);
+    setLoading(false);
+  };
+
   return (
     <div className="app">
-      {/* Header (logo + title) */}
+      {/* Header (images from /public) */}
       <header className="app-header app-header--stack">
         <img src="/circle-logo-2.png" alt="Logo" className="app-logo" />
         <img src="/title.png" alt="App Title" className="app-title-image" />
@@ -139,6 +122,14 @@ function App() {
           onChange={handleImageUpload}
           style={{ display: 'none' }}
         />
+
+        <label style={{ marginLeft: 8 }}>
+          Condition:{' '}
+          <select value={condition} onChange={handleConditionChange} aria-label="Price condition">
+            <option value="N">New</option>
+            <option value="U">Used</option>
+          </select>
+        </label>
       </div>
 
       {/* Preview + status */}
@@ -158,7 +149,9 @@ function App() {
           <div key={r.id} className="minifig-card">
             <img src={r.img_url} alt={r.name} />
             <h3>{r.name}</h3>
-            <p><strong>ID:</strong> {r.id}</p>
+            <p>
+              <strong>ID:</strong> {r.id}
+            </p>
 
             {r.external_url && (
               <p>
@@ -170,12 +163,16 @@ function App() {
 
             {r.priceData ? (
               <div className="price-info">
-                <p><strong>Avg Price:</strong> ${Number(r.priceData.avg_price).toFixed(2)}</p>
+                <p>
+                  <strong>Avg Price:</strong> ${Number(r.priceData.avg_price).toFixed(2)}
+                </p>
                 <p>
                   <strong>Min:</strong> ${Number(r.priceData.min_price).toFixed(2)} |{' '}
                   <strong>Max:</strong> ${Number(r.priceData.max_price).toFixed(2)}
                 </p>
-                <p><strong>Available:</strong> {r.priceData.total_quantity}</p>
+                <p>
+                  <strong>Available:</strong> {r.priceData.total_quantity}
+                </p>
               </div>
             ) : (
               <p className="loading">Loading price data…</p>
@@ -184,7 +181,7 @@ function App() {
         ))}
       </div>
 
-      {/* Footer */}
+      {/* Footer icons (optional) */}
       <footer className="site-footer">
         <a
           href="https://www.instagram.com/brick_bort?igsh=MTFsY3FocnFtdTVweQ%3D%3D&utm_source=qr"
