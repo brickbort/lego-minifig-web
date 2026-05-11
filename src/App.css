@@ -4,6 +4,45 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
 
 /* ---------------------------------------
+   Theme tokens
+--------------------------------------- */
+:root {
+  --bg:               #ffffff;
+  --text:             #111827;
+  --card-bg:          #ffffff;
+  --card-shadow:      rgba(0,0,0,0.08);
+  --card-shadow-hover:rgba(0,0,0,0.14);
+  --img-bg:           #f7fafc;
+  --link:             #6e3ff7;
+  --muted:            #6b7280;
+  --error:            #ef4444;
+  --btn-bg:           #111111;
+  --btn-text:         #ffffff;
+  --btn-hover:        #333333;
+  --toggle-bg:        #f3f4f6;
+  --toggle-text:      #111827;
+  --toggle-hover:     #e5e7eb;
+}
+
+.dark {
+  --bg:               #0f0f0f;
+  --text:             #f3f4f6;
+  --card-bg:          #1c1c1e;
+  --card-shadow:      rgba(0,0,0,0.45);
+  --card-shadow-hover:rgba(0,0,0,0.6);
+  --img-bg:           #2a2a2a;
+  --link:             #a78bfa;
+  --muted:            #9ca3af;
+  --error:            #f87171;
+  --btn-bg:           #f3f4f6;
+  --btn-text:         #111111;
+  --btn-hover:        #e5e7eb;
+  --toggle-bg:        #2a2a2a;
+  --toggle-text:      #f3f4f6;
+  --toggle-hover:     #3a3a3a;
+}
+
+/* ---------------------------------------
    Global
 --------------------------------------- */
 html, body, #root { height: 100%; }
@@ -12,22 +51,24 @@ body {
   margin: 0;
   padding: 0;
   font-family: 'Inter', sans-serif;
-  background: #fff;                     /* solid white page background */
-  color: #111827;
+  background: var(--bg);
+  color: var(--text);
+  transition: background 0.2s, color 0.2s;
 }
 
 /* Status text */
-.error  { color: #ef4444; }
-.loading{ color: #6b7280; }
+.error   { color: var(--error); }
+.loading { color: var(--muted); }
 
 /* ---------------------------------------
    App Container (keeps sticky footer working)
 --------------------------------------- */
 .app {
+  position: relative;
   width: 100%;
   max-width: 960px;
   min-height: 100%;
-  margin: 1rem auto 0;                  /* near the top */
+  margin: 1rem auto 0;
   padding: 0 1rem;
   text-align: center;
   display: flex;
@@ -88,8 +129,8 @@ button {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  background: #111;
-  color: #fff;
+  background: var(--btn-bg);
+  color: var(--btn-text);
   border: none;
   border-radius: 100px;
   padding: 0.55rem 1.3rem;
@@ -100,8 +141,22 @@ button {
   transition: background 0.18s, transform 0.12s, box-shadow 0.18s;
   box-shadow: 0 2px 8px rgba(0,0,0,0.18);
 }
-button:hover  { background: #333; box-shadow: 0 4px 14px rgba(0,0,0,0.22); }
+button:hover  { background: var(--btn-hover); box-shadow: 0 4px 14px rgba(0,0,0,0.22); }
 button:active { transform: scale(0.97); }
+
+/* Dark mode toggle — sits top-right of the header */
+.theme-toggle {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: var(--toggle-bg);
+  color: var(--toggle-text);
+  border-radius: 100px;
+  padding: 0.4rem 0.55rem;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+  font-size: 0;
+}
+.theme-toggle:hover { background: var(--toggle-hover); box-shadow: 0 2px 8px rgba(0,0,0,0.16); }
 
 /* ---------------------------------------
    Results
@@ -121,18 +176,18 @@ button:active { transform: scale(0.97); }
   max-width: 360px;
   margin: 0 auto;
   height: auto;
-  background: #fff;
+  background: var(--card-bg);
   border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  box-shadow: 0 4px 12px var(--card-shadow);
   padding: 16px;
   display: flex;
   flex-direction: column;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
 }
 
 .minifig-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 8px 18px rgba(0,0,0,0.12);
+  box-shadow: 0 8px 18px var(--card-shadow-hover);
 }
 
 /* Card image */
@@ -141,7 +196,7 @@ button:active { transform: scale(0.97); }
   height: 180px;
   object-fit: contain;
   border-radius: 4px;
-  background: #f7fafc;
+  background: var(--img-bg);
   margin-bottom: 12px;
 }
 
@@ -158,7 +213,7 @@ button:active { transform: scale(0.97); }
 /* Price box pinned to bottom */
 .price-info {
   margin-top: auto;
-  background: #fff;                       /* white price box */
+  background: var(--card-bg);
   border-radius: 8px;
   padding: 0.75rem;
   text-align: left;
@@ -167,7 +222,7 @@ button:active { transform: scale(0.97); }
 .price-info p { margin: 4px 0; }
 
 /* Links */
-a { color: #6e3ff7; text-decoration: none; }
+a { color: var(--link); text-decoration: none; }
 a:hover { text-decoration: underline; }
 
 /* ---------------------------------------
