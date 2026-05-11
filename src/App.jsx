@@ -11,18 +11,16 @@ function App() {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [condition, setCondition] = useState('N');
 
-  // Revoke previous blob URL to prevent memory leaks
   useEffect(() => {
     return () => {
       if (previewUrl) URL.revokeObjectURL(previewUrl);
     };
   }, [previewUrl]);
 
-  async function fetchPrice(id, cond) {
+  async function fetchPrice(id) {
     try {
-      const res = await fetch(`${API_BASE}/priceguide/${id}?cond=${cond}`);
+      const res = await fetch(`${API_BASE}/priceguide/${id}?cond=N`);
       const json = await res.json();
       if (!res.ok) throw new Error(JSON.stringify(json));
       return json.data || null;
@@ -58,7 +56,7 @@ function App() {
         items.map(async (item) => {
           const bricklinkSite =
             item.external_sites?.find((s) => s.name?.toLowerCase() === 'bricklink') || {};
-          const priceData = await fetchPrice(item.id, condition);
+          const priceData = await fetchPrice(item.id);
           return {
             id: item.id,
             name: item.name,
@@ -78,27 +76,6 @@ function App() {
     }
   };
 
-  const handleConditionChange = async (e) => {
-    const cond = e.target.value;
-    setCondition(cond);
-    if (!results.length) return;
-
-    setLoading(true);
-    try {
-      const updated = await Promise.all(
-        results.map(async (r) => ({
-          ...r,
-          priceData: await fetchPrice(r.id, cond),
-        }))
-      );
-      setResults(updated);
-    } catch (err) {
-      console.error('condition change error:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <div className="app">
       <header className="app-header app-header--stack">
@@ -107,7 +84,10 @@ function App() {
       </header>
 
       <div className="controls">
-        <button onClick={() => fileInputRef.current?.click()}>Choose Photo or File</button>
+        <button onClick={() => fileInputRef.current?.click()}>
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Upload Photo
+        </button>
         <input
           ref={fileInputRef}
           type="file"
@@ -116,7 +96,10 @@ function App() {
           style={{ display: 'none' }}
         />
 
-        <button onClick={() => cameraInputRef.current?.click()}>Take Photo</button>
+        <button onClick={() => cameraInputRef.current?.click()}>
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          Take Photo
+        </button>
         <input
           ref={cameraInputRef}
           type="file"
@@ -125,14 +108,6 @@ function App() {
           onChange={handleImageUpload}
           style={{ display: 'none' }}
         />
-
-        <label style={{ marginLeft: 8 }}>
-          Condition:{' '}
-          <select value={condition} onChange={handleConditionChange} aria-label="Price condition">
-            <option value="N">New</option>
-            <option value="U">Used</option>
-          </select>
-        </label>
       </div>
 
       {previewUrl && (
