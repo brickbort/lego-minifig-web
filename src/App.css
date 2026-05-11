@@ -99,22 +99,24 @@ button:hover  { background-color: #005bb5; }
 button:active { transform: translateY(1px); }
 
 /* ---------------------------------------
-   Results (side-by-side cards)
+   Results
 --------------------------------------- */
 .results-container {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
   gap: 16px;
   padding: 1rem 0;
-  flex: 1 0 auto;                        /* grow to push footer down */
+  flex: 1 0 auto;
 }
 
 /* Card */
 .minifig-card {
-  width: 280px;
-  height: 420px;
-  background: #fff;                       /* pure white card */
+  width: 100%;
+  max-width: 360px;
+  margin: 0 auto;
+  height: auto;
+  background: #fff;
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.08);
   padding: 16px;
@@ -199,20 +201,4 @@ a:hover { text-decoration: underline; }
 @media (max-width: 420px) {
   .app-logo        { width: 240px; }
   .app-title-image { width: 280px; }
-}
-/* --- Stack results vertically & center them --- */
-.results-container {
-  display: flex;
-  flex-direction: column;   /* one per row */
-  align-items: center;      /* center the cards */
-  gap: 16px;
-  padding: 1rem 0;
-}
-
-/* Make each card a nice centered column width */
-.minifig-card {
-  width: 100%;
-  max-width: 360px;         /* tweak to taste: 320–420px */
-  margin: 0 auto;           /* center horizontally */
-  height: auto;             /* let the content decide height */
 }

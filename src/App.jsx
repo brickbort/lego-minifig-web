@@ -1,7 +1,6 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import './App.css';
 
-// Backend base for BOTH recognition & pricing
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
 
 function App() {
@@ -12,20 +11,18 @@ function App() {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [condition, setCondition] = useState('N'); // N=new, U=used
+  const [condition, setCondition] = useState('N');
 
-  async function recognize(file) {
-    const fd = new FormData();
-    fd.append('image', file, file.name);
-    const res = await fetch(`${API_BASE}/recognize`, { method: 'POST', body: fd });
-    const json = await res.json();
-    if (!res.ok) throw new Error(JSON.stringify(json));
-    return json.items || [];
-  }
+  // Revoke previous blob URL to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
+  }, [previewUrl]);
 
-  async function fetchPrice(id) {
+  async function fetchPrice(id, cond) {
     try {
-      const res = await fetch(`${API_BASE}/priceguide/${id}?cond=${condition}`);
+      const res = await fetch(`${API_BASE}/priceguide/${id}?cond=${cond}`);
       const json = await res.json();
       if (!res.ok) throw new Error(JSON.stringify(json));
       return json.data || null;
@@ -45,11 +42,15 @@ function App() {
     setResults([]);
 
     try {
-      const items = await recognize(file);
+      const fd = new FormData();
+      fd.append('image', file, file.name);
+      const res = await fetch(`${API_BASE}/recognize`, { method: 'POST', body: fd });
+      const json = await res.json();
+      if (!res.ok) throw new Error(JSON.stringify(json));
+      const items = json.items || [];
 
       if (!items.length) {
-        setError('❌ No minifig match found.');
-        setLoading(false);
+        setError('No minifig match found.');
         return;
       }
 
@@ -57,7 +58,7 @@ function App() {
         items.map(async (item) => {
           const bricklinkSite =
             item.external_sites?.find((s) => s.name?.toLowerCase() === 'bricklink') || {};
-          const priceData = await fetchPrice(item.id);
+          const priceData = await fetchPrice(item.id, condition);
           return {
             id: item.id,
             name: item.name,
@@ -71,38 +72,40 @@ function App() {
       setResults(enriched);
     } catch (err) {
       console.error('recognize error:', err);
-      setError('❌ Failed to recognize the image. Please try another photo.');
+      setError('Failed to recognize the image. Please try another photo.');
     } finally {
       setLoading(false);
     }
   };
 
-  // If you want prices to refresh when switching New/Used:
   const handleConditionChange = async (e) => {
     const cond = e.target.value;
     setCondition(cond);
     if (!results.length) return;
 
     setLoading(true);
-    const updated = await Promise.all(
-      results.map(async (r) => ({
-        ...r,
-        priceData: await fetchPrice(r.id),
-      }))
-    );
-    setResults(updated);
-    setLoading(false);
+    try {
+      const updated = await Promise.all(
+        results.map(async (r) => ({
+          ...r,
+          priceData: await fetchPrice(r.id, cond),
+        }))
+      );
+      setResults(updated);
+    } catch (err) {
+      console.error('condition change error:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="app">
-      {/* Header (images from /public) */}
       <header className="app-header app-header--stack">
         <img src="/circle-logo-2.png" alt="Logo" className="app-logo" />
         <img src="/title.png" alt="App Title" className="app-title-image" />
       </header>
 
-      {/* Controls */}
       <div className="controls">
         <button onClick={() => fileInputRef.current?.click()}>Choose Photo or File</button>
         <input
@@ -132,7 +135,6 @@ function App() {
         </label>
       </div>
 
-      {/* Preview + status */}
       {previewUrl && (
         <img
           src={previewUrl}
@@ -140,10 +142,9 @@ function App() {
           style={{ display: 'block', margin: '16px auto', maxWidth: 300 }}
         />
       )}
-      {loading && <p className="loading">🔄 Working…</p>}
+      {loading && <p className="loading">Working…</p>}
       {error && <p className="error">{error}</p>}
 
-      {/* Results */}
       <div className="results-container">
         {results.map((r) => (
           <div key={r.id} className="minifig-card">
@@ -181,7 +182,6 @@ function App() {
         ))}
       </div>
 
-      {/* Footer icons (optional) */}
       <footer className="site-footer">
         <a
           href="https://www.instagram.com/brick_bort?igsh=MTFsY3FocnFtdTVweQ%3D%3D&utm_source=qr"
