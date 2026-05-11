@@ -22,6 +22,10 @@ function App() {
   };
 
   useEffect(() => {
+    document.documentElement.classList.toggle('dark', dark);
+  }, [dark]);
+
+  useEffect(() => {
     return () => {
       if (previewUrl) URL.revokeObjectURL(previewUrl);
     };
@@ -86,7 +90,7 @@ function App() {
   };
 
   return (
-    <div className={`app${dark ? ' dark' : ''}`}>
+    <div className="app">
       <header className="app-header app-header--stack">
         <button className="theme-toggle" onClick={toggleDark} aria-label="Toggle dark mode">
           {dark ? (
