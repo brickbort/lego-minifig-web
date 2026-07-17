@@ -1,14 +1,11 @@
-/* ---------------------------------------
-   Font
---------------------------------------- */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+/* Font loaded via <link> in index.html */
 
 /* ---------------------------------------
    Global
 --------------------------------------- */
 html, body, #root {
   min-height: 100%;
-  min-height: 100dvh; /* respects Safari's collapsing toolbar */
+  min-height: 100dvh;
 }
 
 body {
@@ -17,13 +14,39 @@ body {
   font-family: 'Inter', sans-serif;
   background: #fff;
   color: #111827;
-  -webkit-text-size-adjust: 100%; /* prevent font inflation in landscape */
-  -webkit-tap-highlight-color: transparent; /* remove grey flash on tap */
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* Status text */
-.error   { color: #ef4444; }
-.loading { color: #6b7280; }
+.error  { color: #ef4444; margin: 8px 0; }
+.loading{ color: #6b7280; margin: 4px 0; }
+.muted  { color: #9ca3af; font-size: 0.9rem; margin: 8px 0; }
+
+/* ---------------------------------------
+   Loading state
+--------------------------------------- */
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 0;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.spinner {
+  display: block;
+  width: 24px;
+  height: 24px;
+  border: 2.5px solid #e5e7eb;
+  border-top-color: #6b7280;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
 
 /* ---------------------------------------
    App Container
@@ -34,7 +57,6 @@ body {
   min-height: 100dvh;
   margin: 0 auto;
   padding: 1rem 1rem 0;
-  /* respect iPhone notch / home-bar safe areas */
   padding-left:  max(1rem, env(safe-area-inset-left));
   padding-right: max(1rem, env(safe-area-inset-right));
   text-align: center;
@@ -83,7 +105,7 @@ body {
 
 input[type="file"] { display: none; }
 
-/* Buttons — touch-friendly */
+/* Buttons */
 button {
   display: inline-flex;
   align-items: center;
@@ -93,7 +115,6 @@ button {
   color: #fff;
   border: none;
   border-radius: 100px;
-  /* min 44×44 pt — Apple HIG minimum touch target */
   min-height: 44px;
   padding: 0 1.4rem;
   font-family: inherit;
@@ -101,16 +122,13 @@ button {
   font-weight: 600;
   letter-spacing: 0.01em;
   cursor: pointer;
-  /* eliminate 300ms delay on mobile */
   touch-action: manipulation;
   transition: background 0.18s, box-shadow 0.18s;
   box-shadow: 0 2px 8px rgba(0,0,0,0.18);
-  /* prevent text selection on double-tap */
   user-select: none;
   -webkit-user-select: none;
 }
 
-/* hover only on pointer devices so state doesn't stick on touch */
 @media (hover: hover) {
   button:hover { background: #333; box-shadow: 0 4px 14px rgba(0,0,0,0.22); }
 }
@@ -124,7 +142,9 @@ button:active { background: #333; transform: scale(0.97); }
   margin: 16px auto;
   width: 100%;
   max-width: 300px;
+  max-height: 300px;   /* prevents tall portrait photos from dominating */
   height: auto;
+  object-fit: contain;
   border-radius: 10px;
 }
 
@@ -151,9 +171,9 @@ button:active { background: #333; transform: scale(0.97); }
   padding: 16px;
   display: flex;
   flex-direction: column;
+  text-align: left;
 }
 
-/* hover lift only on pointer devices */
 @media (hover: hover) {
   .minifig-card:hover {
     transform: translateY(-4px);
@@ -182,9 +202,7 @@ button:active { background: #333; transform: scale(0.97); }
 /* Price box */
 .price-info {
   margin-top: auto;
-  border-radius: 8px;
-  padding: 0.6rem 0.75rem;
-  text-align: left;
+  padding: 0.6rem 0;
   font-size: 0.9rem;
   display: flex;
   gap: 0.5rem;
@@ -230,13 +248,12 @@ a:hover { text-decoration: underline; }
   justify-content: center;
   align-items: center;
   gap: 16px;
-  /* extra padding for iPhone home bar */
   padding: 16px 0 max(24px, env(safe-area-inset-bottom));
   margin-top: auto;
 }
 
 .site-footer img {
-  width: 44px;  /* min touch target */
+  width: 44px;
   height: 44px;
   object-fit: contain;
   filter: drop-shadow(0 2px 6px rgba(0,0,0,.15));
@@ -244,22 +261,19 @@ a:hover { text-decoration: underline; }
 
 @media (hover: hover) {
   .site-footer a:hover img,
-  .site-footer a:focus img {
-    transform: scale(1.08);
-  }
+  .site-footer a:focus img { transform: scale(1.08); }
   .site-footer img { transition: transform .15s ease; }
 }
 
 /* ---------------------------------------
-   Responsive tweaks
+   Responsive
 --------------------------------------- */
 @media (max-width: 700px) {
   .app-logo        { width: 300px; }
   .app-title-image { width: 360px; margin-top: -70px; }
 
-  /* full-width buttons on narrow screens */
-  .controls { flex-direction: column; align-items: center; }
-  button    { width: 100%; max-width: 300px; }
+  .controls        { flex-direction: column; align-items: center; }
+  button           { width: 100%; max-width: 300px; }
 }
 
 @media (max-width: 420px) {

@@ -60,6 +60,9 @@ function App() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Reset so selecting the same file again re-triggers onChange
+    e.target.value = '';
+
     setError('');
     setPreviewUrl(URL.createObjectURL(file));
     setLoading(true);
@@ -137,43 +140,50 @@ function App() {
       </div>
 
       {previewUrl && (
-        <img
-          src={previewUrl}
-          alt="Preview"
-          className="preview-image"
-        />
+        <img src={previewUrl} alt="Preview" className="preview-image" />
       )}
-      {loading && <p className="loading">Working…</p>}
+
+      {loading && (
+        <div className="loading-state">
+          <span className="spinner" role="status" aria-label="Loading" />
+          <p className="loading">Identifying…</p>
+        </div>
+      )}
       {error && <p className="error">{error}</p>}
 
-      <div className="results-container">
-        {results.map((r) => (
-          <div key={r.id} className="minifig-card">
-            <img src={r.img_url} alt={r.name} loading="lazy" />
-            <h3>{r.name}</h3>
-            <p>
-              <strong>ID:</strong> {r.id}
-            </p>
+      {results.length > 0 && (
+        <div className="results-container">
+          {results.map((r) => (
+            <div key={r.id} className="minifig-card">
+              <img
+                src={r.img_url}
+                alt={r.name}
+                loading="lazy"
+                onError={(e) => { e.currentTarget.style.display = 'none'; }}
+              />
+              <h3>{r.name}</h3>
+              <p><strong>ID:</strong> {r.id}</p>
 
-            {r.external_url && (
-              <p>
-                <a href={r.external_url} target="_blank" rel="noreferrer">
-                  View on BrickLink
-                </a>
-              </p>
-            )}
+              {r.external_url && (
+                <p>
+                  <a href={r.external_url} target="_blank" rel="noreferrer">
+                    View on BrickLink
+                  </a>
+                </p>
+              )}
 
-            {r.priceData ? (
-              <div className="price-info">
-                <PriceSection label="New" data={r.priceData.new} />
-                <PriceSection label="Used" data={r.priceData.used} />
-              </div>
-            ) : (
-              <p className="loading">Loading price data…</p>
-            )}
-          </div>
-        ))}
-      </div>
+              {r.priceData ? (
+                <div className="price-info">
+                  <PriceSection label="New" data={r.priceData.new} />
+                  <PriceSection label="Used" data={r.priceData.used} />
+                </div>
+              ) : (
+                <p className="muted">Price unavailable</p>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
 
       <footer className="site-footer">
         <a
