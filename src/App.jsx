@@ -3,6 +3,28 @@ import './App.css';
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001';
 
+function fmt(val) {
+  const n = Number(val);
+  return isNaN(n) ? '—' : `$${n.toFixed(2)}`;
+}
+
+function PriceSection({ label, data }) {
+  return (
+    <div className="price-section">
+      <p className="price-section-label">{label}</p>
+      {data ? (
+        <>
+          <p><strong>Avg:</strong> {fmt(data.qty_avg_price)}</p>
+          <p><strong>Min:</strong> {fmt(data.min_price)} &nbsp;·&nbsp; <strong>Max:</strong> {fmt(data.max_price)}</p>
+          <p><strong>Listings:</strong> {data.unit_quantity ?? '—'} &nbsp;·&nbsp; <strong>Qty:</strong> {data.total_quantity ?? '—'}</p>
+        </>
+      ) : (
+        <p className="price-none">No listings</p>
+      )}
+    </div>
+  );
+}
+
 function App() {
   const fileInputRef = useRef(null);
   const cameraInputRef = useRef(null);
@@ -20,10 +42,10 @@ function App() {
 
   async function fetchPrice(id) {
     try {
-      const res = await fetch(`${API_BASE}/priceguide/${id}?cond=N`);
+      const res = await fetch(`${API_BASE}/priceguide/${id}`);
       const json = await res.json();
       if (!res.ok) throw new Error(JSON.stringify(json));
-      return json.data || null;
+      return json; // { new: {...}, used: {...} }
     } catch (e) {
       console.error('price fetch error:', e);
       return null;
@@ -139,16 +161,8 @@ function App() {
 
             {r.priceData ? (
               <div className="price-info">
-                <p>
-                  <strong>Avg Price:</strong> ${Number(r.priceData.avg_price).toFixed(2)}
-                </p>
-                <p>
-                  <strong>Min:</strong> ${Number(r.priceData.min_price).toFixed(2)} |{' '}
-                  <strong>Max:</strong> ${Number(r.priceData.max_price).toFixed(2)}
-                </p>
-                <p>
-                  <strong>Available:</strong> {r.priceData.total_quantity}
-                </p>
+                <PriceSection label="New" data={r.priceData.new} />
+                <PriceSection label="Used" data={r.priceData.used} />
               </div>
             ) : (
               <p className="loading">Loading price data…</p>
