@@ -43,8 +43,12 @@ function App() {
       // New backend format: { new: {...}, used: {...} }
       if ('new' in json || 'used' in json) return json;
       // Old backend format: { meta, data: {...} } — handle gracefully
-      if (json.data) return { new: json.data, used: null };
+      if (json.data) {
+        console.log('[priceguide] old format — avg_price:', json.data.avg_price, 'qty_avg_price:', json.data.qty_avg_price);
+        return { new: json.data, used: null };
+      }
 
+      console.warn('[priceguide] unrecognised response shape', json);
       return null;
     } catch (e) {
       console.error('price fetch error:', e);
