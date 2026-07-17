@@ -37,18 +37,13 @@ function App() {
     try {
       const res = await fetch(`${API_BASE}/priceguide/${id}`);
       const json = await res.json();
-      console.log('[priceguide]', id, json);
       if (!res.ok) throw new Error(JSON.stringify(json));
 
       // New backend format: { new: {...}, used: {...} }
       if ('new' in json || 'used' in json) return json;
-      // Old backend format: { meta, data: {...} } — handle gracefully
-      if (json.data) {
-        console.log('[priceguide] old format — avg_price:', json.data.avg_price, 'qty_avg_price:', json.data.qty_avg_price);
-        return { new: json.data, used: null };
-      }
+      // Old backend format: { meta, data: {...} }
+      if (json.data) return { new: json.data, used: null };
 
-      console.warn('[priceguide] unrecognised response shape', json);
       return null;
     } catch (e) {
       console.error('price fetch error:', e);
