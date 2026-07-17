@@ -38,12 +38,16 @@ function App() {
       const res = await fetch(`${API_BASE}/priceguide/${id}`);
       const json = await res.json();
       if (!res.ok) throw new Error(JSON.stringify(json));
-      console.log('[priceguide raw]', JSON.stringify(Object.keys(json)), 'used:', JSON.stringify(json.used));
 
       // New backend format: { new: {...}, used: {...} }
       if ('new' in json || 'used' in json) return json;
-      // Old backend format: { meta, data: {...} }
-      if (json.data) return { new: json.data, used: null };
+
+      // Old backend format: { meta, data } — make a second call for Used
+      if (json.data) {
+        const usedRes = await fetch(`${API_BASE}/priceguide/${id}?cond=U`);
+        const usedJson = await usedRes.json();
+        return { new: json.data, used: usedJson.data || null };
+      }
 
       return null;
     } catch (e) {
