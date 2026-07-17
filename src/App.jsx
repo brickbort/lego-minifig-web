@@ -37,8 +37,15 @@ function App() {
     try {
       const res = await fetch(`${API_BASE}/priceguide/${id}`);
       const json = await res.json();
+      console.log('[priceguide]', id, json);
       if (!res.ok) throw new Error(JSON.stringify(json));
-      return json; // { new: {...}, used: {...} }
+
+      // New backend format: { new: {...}, used: {...} }
+      if ('new' in json || 'used' in json) return json;
+      // Old backend format: { meta, data: {...} } — handle gracefully
+      if (json.data) return { new: json.data, used: null };
+
+      return null;
     } catch (e) {
       console.error('price fetch error:', e);
       return null;
