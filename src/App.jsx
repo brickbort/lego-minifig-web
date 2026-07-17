@@ -9,18 +9,11 @@ function fmt(val) {
 }
 
 function PriceSection({ label, data }) {
+  const avg = data?.avg_price || data?.qty_avg_price;
   return (
     <div className="price-section">
       <p className="price-section-label">{label}</p>
-      {data ? (
-        <>
-          <p><strong>Avg:</strong> {fmt(data.qty_avg_price)}</p>
-          <p><strong>Min:</strong> {fmt(data.min_price)} &nbsp;·&nbsp; <strong>Max:</strong> {fmt(data.max_price)}</p>
-          <p><strong>Listings:</strong> {data.unit_quantity ?? '—'} &nbsp;·&nbsp; <strong>Qty:</strong> {data.total_quantity ?? '—'}</p>
-        </>
-      ) : (
-        <p className="price-none">No listings</p>
-      )}
+      <p className="price-avg">{avg ? fmt(avg) : '—'}</p>
     </div>
   );
 }

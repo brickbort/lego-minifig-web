@@ -206,12 +206,14 @@ button:active { background: #333; transform: scale(0.97); }
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: #6b7280;
-  margin: 0 0 4px;
+  margin: 0 0 2px;
 }
 
-.price-none {
-  color: #9ca3af;
-  font-size: 0.85rem;
+.price-avg {
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin: 0;
+  color: #111827;
 }
 
 .price-info p { margin: 3px 0; }
