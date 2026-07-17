@@ -38,6 +38,7 @@ function App() {
       const res = await fetch(`${API_BASE}/priceguide/${id}`);
       const json = await res.json();
       if (!res.ok) throw new Error(JSON.stringify(json));
+      console.log('[priceguide raw]', JSON.stringify(Object.keys(json)), 'used:', JSON.stringify(json.used));
 
       // New backend format: { new: {...}, used: {...} }
       if ('new' in json || 'used' in json) return json;
