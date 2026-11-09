@@ -26,12 +26,81 @@ function App() {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [wantedLists, setWantedLists] = useState(null); // null=hidden, array=show picker
 
   useEffect(() => {
     return () => {
       if (previewUrl) URL.revokeObjectURL(previewUrl);
     };
   }, [previewUrl]);
+
+  async function loadWantedListItems(listId) {
+    setLoading(true);
+    setError('');
+    setWantedLists(null);
+    try {
+      const res = await fetch(`${API_BASE}/wantedlists/${listId}/items`);
+      const items = await res.json();
+      if (!res.ok) throw new Error(JSON.stringify(items));
+
+      const minifigs = items.filter((entry) => entry.item?.type === 'MINIFIG');
+      if (!minifigs.length) {
+        setError('No minifigs found in this wanted list.');
+        return;
+      }
+
+      const enriched = await Promise.all(
+        minifigs.map(async (entry) => {
+          const id = entry.item.no;
+          const priceData = await fetchPrice(id);
+          return {
+            id,
+            name: entry.item.name,
+            img_url: `https://img.bricklink.com/ItemImage/MN/0/${id}.png`,
+            external_url: `https://www.bricklink.com/v2/catalog/catalogitem.page?M=${id}`,
+            priceData,
+            quantity: entry.quantity,
+          };
+        })
+      );
+
+      setResults(enriched);
+    } catch (e) {
+      console.error('wanted list items error:', e);
+      setError('Failed to load wanted list items.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleWantedList() {
+    setError('');
+    setResults([]);
+    setPreviewUrl(null);
+    setWantedLists(null);
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/wantedlists`);
+      const lists = await res.json();
+      if (!res.ok) throw new Error(JSON.stringify(lists));
+
+      if (!lists.length) {
+        setError('No wanted lists found on your BrickLink account.');
+        return;
+      }
+
+      if (lists.length === 1) {
+        await loadWantedListItems(lists[0].id);
+      } else {
+        setWantedLists(lists);
+        setLoading(false);
+      }
+    } catch (e) {
+      console.error('wanted lists fetch error:', e);
+      setError('Failed to load wanted lists.');
+      setLoading(false);
+    }
+  }
 
   async function fetchPrice(id) {
     try {
@@ -113,6 +182,10 @@ function App() {
       </header>
 
       <div className="controls">
+        <button onClick={handleWantedList}>
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+          Wanted List
+        </button>
         <button onClick={() => fileInputRef.current?.click()}>
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
           Upload Photo
@@ -139,6 +212,23 @@ function App() {
         />
       </div>
 
+      {wantedLists && wantedLists.length > 1 && (
+        <div className="list-picker">
+          <p className="list-picker-label">Select a wanted list:</p>
+          <div className="list-picker-buttons">
+            {wantedLists.map((list) => (
+              <button
+                key={list.id}
+                className="btn-secondary"
+                onClick={() => loadWantedListItems(list.id)}
+              >
+                {list.name || `List #${list.id}`}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {previewUrl && (
         <img src={previewUrl} alt="Preview" className="preview-image" />
       )}
@@ -162,7 +252,7 @@ function App() {
                 onError={(e) => { e.currentTarget.style.display = 'none'; }}
               />
               <h3>{r.name}</h3>
-              <p><strong>ID:</strong> {r.id}</p>
+              <p><strong>ID:</strong> {r.id}{r.quantity > 1 ? ` · Qty: ${r.quantity}` : ''}</p>
 
               {r.external_url && (
                 <p>
